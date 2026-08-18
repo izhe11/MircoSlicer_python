@@ -6,6 +6,37 @@ from PySide6.QtCore import Qt, Signal
 import pyqtgraph as pg
 from trimesh.transformations import rotation_matrix as _rot_mat
 
+from pyqtgraph.opengl import shaders as _pg_shaders
+
+# 自定义亮化着色器：基于 pyqtgraph 默认 "shaded"，
+# 提高环境光(0.2→0.5)、增大漫反射占比，避免背光面过暗
+_BRIGHT_SHADED = _pg_shaders.ShaderProgram("brightShaded", [
+    _pg_shaders.VertexShader("""\
+        uniform mat4 u_mvp;
+        uniform mat3 u_normal;
+        attribute vec4 a_position;
+        attribute vec3 a_normal;
+        attribute vec4 a_color;
+        varying vec4 v_color;
+        varying vec3 v_normal;
+        void main() {
+            v_normal = normalize(u_normal * a_normal);
+            v_color = a_color;
+            gl_Position = u_mvp * a_position;
+        }
+    """),
+    _pg_shaders.FragmentShader("""\
+        varying vec4 v_color;
+        varying vec3 v_normal;
+        void main() {
+            vec3 L = normalize(vec3(0.5, 0.5, 1.0));  // 光从相机右上方照入
+            float d = max(dot(normalize(v_normal), L), 0.0);
+            vec3 rgb = v_color.rgb * (0.5 + 0.8 * d);  // 环境光0.5，漫反射0.8
+            gl_FragColor = vec4(rgb, v_color.a);
+        }
+    """),
+])
+
 
 class ModelViewer(gl.GLViewWidget):
     """内嵌 3D STL 模型查看器，支持鼠标旋转/缩放/平移、模型拾取与阵列复制"""
@@ -43,7 +74,7 @@ class ModelViewer(gl.GLViewWidget):
         self._grid = gl.GLGridItem()
         self._grid.setSize(200, 200)
         self._grid.setSpacing(10, 10)
-        self._grid.setColor((100, 100, 100, 255))
+        self._grid.setColor((255, 158, 33, 255))
         self.addItem(self._grid)
 
     def add_model(self, mesh_path: str):
@@ -99,6 +130,18 @@ class ModelViewer(gl.GLViewWidget):
         self._mesh_item = None
         self._model_offset = np.zeros(3, dtype=np.float64)
 
+    def clear_all(self):
+        """清除当前场景中所有模型，并恢复空白场景状态"""
+        self._clear_model()
+        self._remove_slice_plane()
+        # 恢复网格与相机到初始状态（避免停留在旧模型视角）
+        self._grid.resetTransform()
+        self._grid.setSize(200, 200)
+        self._grid.setSpacing(10, 10)
+        self.opts["center"] = pg.Vector(0, 0, 0)
+        self.setCameraPosition(distance=80, elevation=30, azimuth=-45)
+        self.update()
+
     def reset_model_position(self):
         """复位模型到拖拽前位置"""
         for inst in self._instances:
@@ -118,7 +161,7 @@ class ModelViewer(gl.GLViewWidget):
         src = self._sources[source_idx]
         vertices = src["vertices"]
         faces = src["faces"]
-        face_color = np.array([0.30, 0.70, 0.80, 0.95], dtype=np.float32)
+        face_color = np.array([0.45, 0.25, 0.60, 0.95], dtype=np.float32)
         colors = np.tile(face_color, (len(faces), 1))
         rotated = self._apply_matrix(vertices, rot)
         item = gl.GLMeshItem(
@@ -128,8 +171,8 @@ class ModelViewer(gl.GLViewWidget):
             edgeColor=(1.0, 0.0, 0.0, 1.0),
             drawEdges=False,
             smooth=False,
-            glOptions="translucent",
-            shader="shaded",
+            glOptions="opaque",
+            shader=_BRIGHT_SHADED,
         )
         if offset.any():
             item.translate(offset[0], offset[1], offset[2])
@@ -165,8 +208,8 @@ class ModelViewer(gl.GLViewWidget):
         extent = np.linalg.norm(mx - mn)
         center = (mn + mx) / 2
         self.opts["center"] = pg.Vector(*center)
-        self.setCameraPosition(distance=extent * 1.5)
-        grid_size = extent * 1.5
+        self.setCameraPosition(distance=extent * 2.5)
+        grid_size = extent * 2.5
         self._grid.resetTransform()
         self._grid.setSize(grid_size, grid_size)
         self._grid.setSpacing(grid_size / 10, grid_size / 10)
@@ -277,8 +320,8 @@ class ModelViewer(gl.GLViewWidget):
 
     def _apply_selection_highlight(self):
         """刷新选中高亮（用 faceColors 换色）"""
-        base = np.array([0.30, 0.70, 0.80, 0.95], dtype=np.float32)
-        selected = np.array([1.0, 0.85, 0.0, 0.95], dtype=np.float32)
+        base = np.array([0.45, 0.25, 0.60, 0.95], dtype=np.float32)
+        selected = np.array([0.40, 0.60, 0.25, 0.95], dtype=np.float32)
         for i, inst in enumerate(self._instances):
             c = selected if i == self._selected_index else base
             verts = self._source_verts(inst)

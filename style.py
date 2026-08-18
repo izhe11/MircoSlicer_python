@@ -3,26 +3,26 @@
 #QPushButton通用
 btnStyle = """
 QPushButton {
-        background-color: #87CEFA;
+        background-color: #659a40;
         color: #000000;
         border: none;
         padding: 2px;
         font-size: 15px;
-        font-family: Microsoft YaHei;
+        font-family: Microsoft YaHei UI;
         font-weight: 600;
         border-radius: 9px;
     }
     QPushButton:hover {
-        background-color: #1E90FF;
+        background-color: rgb(255,158,33);
     }
     QPushButton:pressed {
-        background-color: #1E90FF;
+        background-color: rgb(255,158,33);
     }
         """
 
 #标题栏frame style
 titleFrameStyle = """
-    background-color: #F0FFFF;
+    background-color: #659a40;
     border-top-left-radius: 15px;
     border-top-right-radius: 15px;
 """
@@ -30,11 +30,12 @@ titleFrameStyle = """
 #标题文字style
 titleBtnStyle = """
 QPushButton {
-       background-color: #F0FFFF;   
-       font-family: Microsoft YaHei;
+       background-color: #659a40;   
+       font-family: Arial;
        font-weight: 600;
        border-radius: 15px;
        font-size: 14px;
+       margin-bottom: 4px;
 }
 """
 
@@ -45,7 +46,7 @@ QPushButton {
        border-top-right-radius: 15px;
 }
 QPushButton:hover {
-        background-color: #FF0000;
+        background-color: rgb(136,29,37);
     }
 
 """
@@ -61,7 +62,7 @@ QPushButton:hover {
 
 #参数面板style
 paraFrameStyle = """
-    background-color: #F0F8FF;
+    background-color: #75409A;
     border-bottom-left-radius: 0px;
     border-bottom-right-radius: 0px;
 """
@@ -69,7 +70,7 @@ paraFrameStyle = """
 #参数标签style
 paraLabelStyle = """
 QLabel {
-       background-color: #DEB887;   
+       background-color: #659a40;   
        font-family: Microsoft YaHei;
        font-weight: 400;
        border-radius: 12px;
@@ -109,7 +110,7 @@ QGroupBox::title {
 #lineEdit样式
 lineStyle = """
 QLineEdit{
-        background-color: #FFFFFF;
+        background-color: #D3D3D3;
         border-radius: 12px;
         padding: 2px;
         border: 1px solid #DCDCDC;
@@ -120,7 +121,7 @@ QLineEdit{
 #combox style
 comboStyle = """
 QComboBox{
-        background-color: #FFFFFF;
+        background-color: #D3D3D3;
         border-radius: 11px;
         padding: 2px;
         padding-left: 8px;
@@ -140,7 +141,7 @@ QComboBox::down-arrow{
 QComboBox QAbstractItemView {
       border-radius: 0px;
       border: 1px solid #DCDCDC;
-      background-color: #FFFFFF;
+      background-color: #D3D3D3;
 }
 QListView {
     background-color: #F0F8FF;
@@ -156,7 +157,7 @@ QListView::item:selected {
     color: #000000;
     outline: 0px;
     border-radius: 9px;
-    background-color: #FFE4B5;
+    background-color: rgb(255,158,33);
 }
 """
 
@@ -172,10 +173,29 @@ QProgressBar {
     margin: 5px;
 }
 QProgressBar::chunk {
-    background-color: #32CD32;
+    background-color: #659a40;
     border-radius: 6px;
 }
 """
 
+#左键下拉菜单style
+menuStyle = """
+ QMenu {
+     background-color: #D3D3D3; 
+     margin: 2px;
+ }
 
+ QMenu::item {
+     background-color: transparent;
+     height: 20px;
+     width: 60px;
+     padding: 4px;
+     border-radius: 10px;
+     font-size: 14px;
+ }
+
+ QMenu::item:selected { 
+     background-color: #1E90FF;
+ }
+"""
 

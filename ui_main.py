@@ -19,7 +19,7 @@ from model_viewer import ModelViewer
 
 from style import (btnStyle,titleFrameStyle,titleBtnStyle,titleOperateBtnClose,titleOperateBtnMini,
                   paraFrameStyle,paraLabelStyle,groupTitleStyle,lineStyle,comboStyle,radiobtnStyle,
-                   barStyle,statusStyle)
+                   barStyle,statusStyle,menuStyle)
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -244,7 +244,6 @@ class MainWindow(QMainWindow):
         self.btn_browse = QPushButton("导入模型")
         self.btn_browse.setStyleSheet(btnStyle)
         self.btn_browse.setFixedSize(120, 30)
-        self.btn_browse.clicked.connect(self._on_browse)
 
         #2.开始、取消按钮
         self.btn_start = QPushButton("开始切片")
@@ -255,9 +254,15 @@ class MainWindow(QMainWindow):
         self.btn_stop.setFixedSize(120, 30)
         self.btn_stop.setEnabled(False)
 
-        btn_row.addWidget(self.btn_browse,0,0)
-        btn_row.addWidget(self.btn_start,1,0)
-        btn_row.addWidget(self.btn_stop,1,1)
+        #清除模型
+        self.btn_clear = QPushButton("清除模型")
+        self.btn_clear.setFixedSize(120, 30)
+        self.btn_clear.setStyleSheet(btnStyle)
+
+        btn_row.addWidget(self.btn_browse, 0, 0)
+        btn_row.addWidget(self.btn_clear, 0, 1)
+        btn_row.addWidget(self.btn_start,1, 0)
+        btn_row.addWidget(self.btn_stop,1, 1)
 
         para_panel.addSpacerItem(QSpacerItem(10, 40))
         para_panel.addLayout(btn_row)
@@ -273,6 +278,8 @@ class MainWindow(QMainWindow):
     def _connect_signals(self):
         self.btn_start.clicked.connect(self._on_start)
         self.btn_stop.clicked.connect(self._on_stop)
+        self.btn_browse.clicked.connect(self._on_browse)
+        self.btn_clear.clicked.connect(self._on_clear_all)
         self.radio_binary.toggled.connect(self._update_saturation_controls)
         self.radio_shell.toggled.connect(self._update_saturation_controls)
         self.combo_face.currentTextChanged.connect(self._on_face_changed)
@@ -285,6 +292,7 @@ class MainWindow(QMainWindow):
 
     def _on_model_right_clicked(self):
         menu = QMenu(self)
+        menu.setStyleSheet(menuStyle)
         act_array = menu.addAction("阵列复制")
         act_drop = menu.addAction("贴合底面")
         act_rotate = menu.addAction("旋转90°")
@@ -363,6 +371,7 @@ class MainWindow(QMainWindow):
     # ────────────────── 槽函数 ──────────────────
 
     def _on_browse(self):
+        """导入模型"""
         path, _ = QFileDialog.getOpenFileName(
             self, "选择模型文件", "", "STL 文件 (*.stl);;所有文件 (*)"
         )
@@ -377,6 +386,24 @@ class MainWindow(QMainWindow):
             self.label_status.setText("就绪")
         except Exception as e:
             self.label_status.setText(f"3D 预览失败: {e}")
+
+    def _on_clear_all(self):
+        """清除当前所有模型"""
+        if not self.model_viewer.get_instances():
+            return
+        if self._worker and self._worker.isRunning():
+            QMessageBox.information(self, "提示", "切片正在进行中，无法清除模型")
+            return
+        reply = QMessageBox.question(
+            self, "确认清除",
+            "确定要清除当前所有模型吗？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+        )
+        if reply != QMessageBox.StandardButton.Yes:
+            return
+        self.model_viewer.clear_all()
+        self._mesh_path = ""                       # 关键：重置，否则开始切片时误判仍有模型
+        self.label_status.setText("已清除所有模型")
 
     def _on_start(self):
         if not self._mesh_path:
@@ -514,6 +541,7 @@ class MainWindow(QMainWindow):
         self.edit_shell_width.setEnabled(not running)
         self.edit_base_sat.setEnabled(not running)
         self.combo_format.setEnabled(not running)
+        self.btn_clear.setEnabled(not running)
 
         if not running:
             self.progress_bar.reset()
