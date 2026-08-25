@@ -252,6 +252,7 @@ def slice_mesh_to_bitmaps(
 
 if __name__ == "__main__":
     import argparse
+    import sys
 
     parser = argparse.ArgumentParser(
         description="STL 模型分层切片工具 — 输出灰度位图 ZIP",
@@ -304,7 +305,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     try:
-        slice_mesh_to_bitmaps(
+        n = slice_mesh_to_bitmaps(
             mesh_path=args.mesh,
             layer_height=args.height,
             target_dpi=args.dpi,
@@ -317,6 +318,11 @@ if __name__ == "__main__":
             image_format=args.fmt,
         )
     except FileNotFoundError:
-        print(f"错误：找不到模型文件 {args.mesh}")
+        print(f"错误：找不到模型文件 {args.mesh}", file=sys.stderr)
+        sys.exit(1)
     except Exception as e:
-        print(f"运行出错: {e}")
+        print(f"运行出错: {e}", file=sys.stderr)
+        sys.exit(1)
+    else:
+        # 成功结果标记行，供 C# 等外部调用方解析
+        print(f"SLICE_OK layers={n} zip={args.zip_name}")
